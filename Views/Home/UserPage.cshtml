@@ -1,0 +1,184 @@
+﻿@{
+    Layout = ViewBag.LayoutPath;
+}
+<div class="row">
+    <div class="col-md-8">
+        @if (ViewBag.LayoutPath == "_UserLayout")
+        {
+            <a href="@Url.Action("NewSurvey", "Survey")" class="btn btn-primary">Add New Survey</a>
+        }
+    </div>
+    <div class="col-md-4">
+        <input type="text" class="form-control mt-2" id="search" placeholder="Search" />
+    </div>
+</div>
+
+<table class="table mt-3" id="surveyTable">
+    <thead>
+        <tr>
+            <th>S.No</th>
+            <th>Sent To</th>
+            <th>Survey</th>
+            <th>Action</th>
+            <th class="hide">Survey Tags</th> <!-- Include the hidden column for Survey Tags -->
+        </tr>
+    </thead>
+    <tbody>
+        @{
+            int serialNumber = 1; // Initialize the serial number counter
+        }
+        @foreach (var survey in Model)
+        {
+            <tr>
+                <td>@serialNumber</td>
+                <td>@survey.SendToEmail</td>
+                <td><a href="@Url.Action("ViewSurvey", "Home", new { token = survey.UniqueId})">View Survey</a></td>
+                <td>
+                    <form method="post" action="@Url.Action("DeleteSurvey", "Home")">
+                        <input type="hidden" name="surveyId" value="@survey.Id" />
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                </td>
+                <td class="hide">@survey.SurveyTags</td> <!-- Include the hidden column data -->
+            </tr>
+            serialNumber++;
+        }
+    </tbody>
+</table>
+
+<div id="pagination" class="mt-3">
+    <button id="prevPage" class="btn btn-primary mr-2">&lt; Prev</button>
+    <span id="currentPage" class="mr-2">Page 1</span>
+    <button id="nextPage" class="btn btn-primary">Next &gt;</button>
+</div>
+
+@section scripts {
+    <script src="~/lib/jquery/dist/jquery.js"></script>
+    <script>
+        $(document).ready(function () {
+            var currentPage = 1;
+            var rowsPerPage = 5; // Number of rows to display per page
+
+            function showRows(startIndex, endIndex) {
+                $('#surveyTable tbody tr').hide().slice(startIndex, endIndex).show();
+            }
+
+            function updatePaginationButtons(totalRows) {
+                var totalPages = Math.ceil(totalRows / rowsPerPage);
+
+                $('#currentPage').text("Page " + currentPage);
+
+                $('#prevPage').prop('disabled', currentPage === 1);
+                $('#nextPage').prop('disabled', currentPage === totalPages);
+            }
+
+            function updatePagination() {
+                var totalRows = $('#surveyTable tbody tr').length;
+                var totalPages = Math.ceil(totalRows / rowsPerPage);
+                var startIndex = (currentPage - 1) * rowsPerPage;
+                var endIndex = currentPage * rowsPerPage;
+                showRows(startIndex, endIndex);
+                updatePaginationButtons(totalRows);
+            }
+
+            function applySearchFilter() {
+                var value = $('#search').val().toLowerCase(); // Convert input value to lowercase for case-insensitive comparison
+                var startIndex = (currentPage - 1) * rowsPerPage;
+                var endIndex = currentPage * rowsPerPage;
+
+                $('#surveyTable tbody tr').hide().filter(function () {
+                    return $(this).text().toLowerCase().indexOf(value) > -1;
+                }).slice(startIndex, endIndex).show(); // Show only rows containing the search value within the current page range
+
+                // Update pagination based on the filtered rows
+                var visibleRows = $('#surveyTable tbody tr:visible').length;
+                updatePaginationButtons(visibleRows);
+            }
+
+            $('#search').on('input', function () {
+                applySearchFilter();
+            });
+
+            $('#prevPage').click(function () {
+                if (currentPage > 1) {
+                    currentPage--;
+                    updatePagination();
+                }
+            });
+
+            $('#nextPage').click(function () {
+                var totalRows = $('#surveyTable tbody tr').length;
+                var totalPages = Math.ceil(totalRows / rowsPerPage);
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    updatePagination();
+                }
+            });
+
+            // Initial setup
+            updatePagination();
+        });
+    </script>
+}
+
+
+@*
+@section scripts {
+    <script src="~/lib/jquery/dist/jquery.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('#search').on('input', function () {
+                var value = $(this).val().toLowerCase(); // Convert input value to lowercase for case-insensitive comparison
+                $('tbody tr').hide().filter(function () {
+                    return $(this).text().toLowerCase().indexOf(value) > -1;
+                }).show(); // Show only rows containing the search value
+            });
+        });
+
+        var currentPage = 1;
+        var rowsPerPage = 5; // Number of rows to display per page
+
+        function showRows(startIndex, endIndex) {
+            $('#surveyTable tbody tr').hide().slice(startIndex, endIndex).show();
+        }
+
+        function updatePaginationButtons() {
+            var totalRows = $('#surveyTable tbody tr').length;
+            var totalPages = Math.ceil(totalRows / rowsPerPage);
+
+            $('#currentPage').text("Page " + currentPage);
+
+            $('#prevPage').prop('disabled', currentPage === 1);
+            $('#nextPage').prop('disabled', currentPage === totalPages);
+        }
+
+        function updatePagination() {
+            var startIndex = (currentPage - 1) * rowsPerPage;
+            var endIndex = currentPage * rowsPerPage;
+            showRows(startIndex, endIndex);
+            updatePaginationButtons();
+        }
+
+        $('#prevPage').click(function () {
+            if (currentPage > 1) {
+                currentPage--;
+                updatePagination();
+            }
+        });
+
+        $('#nextPage').click(function () {
+            var totalRows = $('#surveyTable tbody tr').length;
+            var totalPages = Math.ceil(totalRows / rowsPerPage);
+            if (currentPage < totalPages) {
+                currentPage++;
+                updatePagination();
+            }
+        });
+
+        // Initial setup
+        updatePagination();
+
+    </script>
+}
+
+ *@

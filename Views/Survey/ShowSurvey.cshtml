@@ -1,0 +1,337 @@
+﻿@model SHL_Platform.Models.Survey
+
+@{
+    Layout = "_EmptyLayout";
+}
+<style>
+    img {
+        height: 30px;
+        width: 30px;
+    }
+
+    .rating-container {
+        font-size: 0; /* Remove whitespace between inline-block elements */
+    }
+
+    .rating-star {
+        display: inline-block;
+        width: 20px; /* Adjust the size of the star */
+        height: 20px; /* Adjust the size of the star */
+        font-size: 25px; /* Set the font size to match the star size */
+        color: #ccc; /* Color of the star */
+        cursor: pointer;
+    }
+
+        .rating-star:hover,
+        .rating-star.filled {
+            color: gold; /* Color of the filled star */
+        }
+
+    .table-input {
+        border: none;
+        outline: none; /* Optional: removes the outline when input is focused */
+    }
+
+    .table-container {
+        overflow-x: auto; /* Enable horizontal scrolling if needed */
+        max-width: 100%; /* Limit the maximum width of the container */
+    }
+
+</style>
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">  <img src="~/images/Logo.jpeg" alt="SHL Platform" /> Survey</div>
+            <div class="card-body" id="form-container">
+                <div class="alert alert-success">
+                </div>
+            </div>
+            <div class="card-footer">
+                <button type="button" class="btn btn-success" onclick="saveSurvey();">Submit</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var Token = '@ViewBag.Token';
+    if ('@Model.FormDataJson' !== 'null') {
+        var jsonDataString = '@Html.Raw(Model.FormDataJson)';
+        // Parse the JSON string into a JSON object
+        var jsonData = JSON.parse(jsonDataString);
+        var htmlForm = jsonToHtml(jsonData);
+        // Function to convert JSON data to HTML form
+        function jsonToHtml(jsonData) {
+            var html = '<form id="surveyForm">';
+            for (var key in jsonData) {
+                if (jsonData.hasOwnProperty(key)) {
+                    var item = jsonData[key];
+
+                    if (key.startsWith('textbox')) {
+                        html += '<div class="form-group">'
+                        html += `<label>${item.label}</label>`;
+                        html += `<input type="text" class="form-control"  name="${key}" value="${item.value}">`;
+                        html += '</div>'
+
+                    }
+                    else if (key.startsWith('dropdown')) {
+                        html += '<div class="form-group">'
+
+                        html += `<label>${item.label}</label>`;
+                        html += `<select name="${key}"class="form-control" >`;
+                        item.options.forEach(option => {
+                            html += `<option value="${option}" ${item.selectedValue === option ? 'selected' : ''}>${option}</option>`;
+                        });
+                        html += `</select>`;
+                        html += '</div>'
+
+                    }
+                    else if (key.startsWith('radio')) {
+                        html += '<div class="form-group">'
+                        html += `<label>${item.label}</label>`;
+                        for (var optionKey in item.options) {
+                            html += '<div class="form-check">'
+                            html += `<input type = "radio" name = "${key}" value = "${optionKey}" id = "${optionKey}" ${item.value === optionKey ? 'checked' : ''} class="form-check-input">`;
+                            html += `<label for= "${optionKey}" > ${item.options[optionKey]} </label>`;
+                            html += '</div>'
+                        }
+                        html += '</div>'
+                    }
+                    else if (key.startsWith('rating')) {
+                        html += '<div class="form-group">';
+                        html += `<label>${item.label}</label>`;
+                        html += '<div class="rating-container">';
+                        for (let i = 1; i <= 5; i++) {
+                            html += `<span class="rating-star" data-rating="${i}">★</span>`;
+                        }
+                        html += '</div>';
+                        html += '</div>';
+                    }
+                    else if (key.startsWith('table')) {
+                        html += '<div class="form-group">';
+                        html += `<label>${item.label}</label>`;
+                        html += '<table style="border-collapse: collapse; width: 100%;">';
+                        html += '<thead style="font-weight: bold;">'; // Apply header row styles inline
+                        html += '<tr>';
+                        for (let i = 0; i < item.data[0].length; i++) {
+                            html += `<th style="border: 1px solid black;"><input type="text" class="table-input" style="font-weight: bold;" value="${item.data[0][i]}" /></th>`; // Create editable header cells with inline styles
+                        }
+                        html += '</tr>';
+                        html += '</thead>';
+                        html += '<tbody>';
+                        for (let i = 1; i < item.data.length; i++) {
+                            html += '<tr>';
+                            for (let j = 0; j < item.data[i].length; j++) {
+                                html += `<td style="border: 1px solid black;"><input type="text" class="table-input" value="${item.data[i][j]}" /></td>`;
+                            }
+                            html += '</tr>';
+                        }
+                        html += '</tbody>';
+                        html += '</table>';
+                        html += '</div>';
+                    }
+
+                    else if (key.startsWith('file')) {
+                        html += '<div class="form-group">';
+                        html += `<label>${item.label}</label>`;
+                        html += '<input type="file" class="form-control-file">';
+                        html += '</div>';
+                    }
+
+                    else if (key.startsWith('fillblank')) {
+                        html += '<div class="form-group">';
+                        html += `<label>${item.label}</label>`;
+                        html += `<span contenteditable="true">${item.content}</span>`;
+                        html += '</div>';
+                    }
+                }
+            }
+            html += '</form>';
+            return html;
+        }
+        // Append the HTML form to a container
+        document.getElementById('form-container').innerHTML = htmlForm;
+
+        // Apply background image to the form container
+        var formContainer = document.getElementById('showsurvey-container');
+        formContainer.style.backgroundImage = `url('${jsonData.bgImage}')`;
+        formContainer.style.backgroundRepeat = `no-repeat`;
+    }
+    else {
+        alert("Ask your admin to send the link again")
+    }
+
+    document.querySelectorAll('.rating-star').forEach(star => {
+        star.addEventListener('click', function () {
+            const rating = parseInt(this.getAttribute('data-rating'));
+            const stars = this.parentNode.querySelectorAll('.rating-star');
+            stars.forEach((s, index) => {
+                if (index < rating) {
+                    s.classList.add('filled');
+                } else {
+                    s.classList.remove('filled');
+                }
+            });
+        });
+    });
+
+
+    function saveSurvey() {
+        var updatedJson = {};
+
+        // Iterate through form elements
+        $('#surveyForm').find('input, select').each(function () {
+            var name = $(this).attr('name');
+            var type = $(this).prop('tagName').toLowerCase();
+
+            // Ensure the element has a name attribute
+            if (!name) return;
+
+            // Update textbox values
+            if (type === 'input' && $(this).attr('type') === 'text') {
+                updatedJson[name] = {
+                    label: $(this).siblings('label').text(),
+                    value: $(this).val()
+                };
+            }
+            // Update dropdown values
+            else if (type === 'select') {
+                var selectedValue = $(this).val();
+                var options = [];
+                $(this).find('option').each(function () {
+                    options.push($(this).text());
+                });
+                updatedJson[name] = {
+                    label: $(this).siblings('label').text(),
+                    selectedValue: selectedValue,
+                    options: options
+                };
+            }
+            // Update radio button values
+            else if (type === 'input' && $(this).attr('type') === 'radio') {
+                if ($(this).is(':checked')) {
+                    var radioGroupName = $(this).attr('name');
+                    var radioValue = $(this).val();
+                    var radioOptions = {};
+                    $('input[name="' + radioGroupName + '"]').each(function () {
+                        radioOptions[$(this).val()] = $(this).siblings('label').text();
+                    });
+                    updatedJson[radioGroupName] = {
+                        label: $(this).parent().siblings('label').text(),
+                        options: radioOptions,
+                        value: radioValue
+                    };
+                }
+            }
+        });
+
+        // Update table values
+        $('#surveyForm').find('table').each(function () {
+            var tableName = $(this).siblings('label').text();
+            var tableData = [];
+
+            // Get header values
+            var headers = [];
+            $(this).find('th input').each(function () {
+                headers.push($(this).val());
+            });
+
+            // Get body values
+            $(this).find('tbody tr').each(function () {
+                var rowData = [];
+                $(this).find('td input').each(function () {
+                    rowData.push($(this).val());
+                });
+                tableData.push(rowData);
+            });
+
+            updatedJson['table_' + Object.keys(updatedJson).length] = {
+                label: tableName,
+                data: [headers, ...tableData]
+            };
+        });
+
+        // Update rating values
+        $('#surveyForm').find('.rating-container').each(function () {
+            var ratingName = $(this).prev('label').text();
+            var ratingValue = $(this).find('.filled').length;
+            updatedJson['rating_' + Object.keys(updatedJson).length] = {
+                label: ratingName,
+                value: ratingValue
+            };
+        });
+        var filesArray = [];
+        var fileKey = [];
+        var fileToken = [];
+        // Update file upload values
+        $('#surveyForm').find('input[type="file"]').each(function () {
+            var fileName = $(this).siblings('label').text();
+            var uploadedFileName = $(this).val().split('\\').pop(); // Extract the file name from the file path
+            var keyValue = Object.keys(updatedJson).length;
+            updatedJson['file_' + keyValue] = {
+                label: fileName,
+                fileName: uploadedFileName
+            };
+
+            var fileInput = $(this)[0].files[0]; // Get the file object
+
+            if (fileInput) { // Ensure a file is selected
+                filesArray.push(fileInput); // Add file object to the array
+                fileKey.push('file_' + keyValue);
+                fileToken.push(Token);
+            }
+        });
+        var formData = new FormData();
+        for (var i = 0; i < filesArray.length; i++) {
+            formData.append('files', filesArray[i]);
+            formData.append('fileKey', fileKey[i]);
+            formData.append('fileToken', fileToken[i]);
+        }
+
+        $.ajax({
+            url: '/Survey/UploadFiles',
+            type: 'POST',
+            data: formData, // Pass the FormData object
+            processData: false, // Prevent jQuery from processing the data
+            contentType: false, // Prevent jQuery from setting contentType
+            success: function (data) {
+                console.log('Files uploaded successfully:', data);
+            },
+            error: function (xhr, status, error) {
+                console.error('Error uploading files:', error);
+            }
+        });
+
+        updatedJson['bgImage'] = jsonData.bgImage;
+
+        var stringifyData = JSON.stringify(JSON.stringify(updatedJson));
+        let url = "/Survey/UpdateSurvey?token=" + Token
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: stringifyData
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to submit form.');
+                }
+                return response.json(); // Parse the JSON response
+            })
+            .then(data => {
+                if (data.success) {
+                    alert("Suvey Submitted Successfully ! Click OK to close the tab!");
+                    window.close();
+                } else {
+                    console.error('Form submission failed.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error.message);
+            });
+    }
+
+
+</script>

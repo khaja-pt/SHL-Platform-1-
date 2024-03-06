@@ -1,0 +1,159 @@
+﻿@model SHL_Platform.ViewModels.RegistrationViewModel
+@{
+    Layout = "";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        .was-validated .form-control:invalid {
+            border-color: #dc3545;
+        }
+
+            .was-validated .form-control:invalid:focus {
+                border-color: #dc3545;
+                box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, .25);
+            }
+
+        .hide {
+            display: none;
+        }
+
+        .register-container {
+            margin-top: 50px;
+        }
+
+        img {
+            height: 30px;
+            width: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container register-container">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">  <img src="~/images/Logo.jpeg" alt="SHL Platform" /> Sign Up</div>
+                    <div class="card-body">
+                        @if (!ViewContext.ModelState.IsValid)
+                        {
+                            <div class="alert alert-danger" role="alert">
+                                @Html.ValidationSummary(false, "", new { @class = "text-danger" })
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(ViewData["SuccessMessage"] as string))
+                        {
+                            <div class="alert alert-success">
+                                @ViewData["SuccessMessage"]
+                            </div>
+                        }
+                        <form asp-action="RegisterUser" method="post" class="needs-validation" novalidate>
+                            <div class="form-group">
+                                <label for="employeename">Employee Name:</label>
+                                <input type="text" class="form-control" id="employeename" name="Employeename" placeholder="Employee Name" required>
+                                <div class="invalid-feedback">Employee Name is required.</div>
+                            </div>
+                            <div class="form-group hide">
+                                <label for="password">Password:</label>
+                                <input type="password" class="form-control" id="password" name="Password" placeholder="Enter your password">
+                            </div>
+                            <div class="form-group">
+                                <label for="email">Email Address:</label>
+                                <input type="email" class="form-control" id="email" name="Email" placeholder="Email Address" required>
+                                <div class="invalid-feedback">Please enter a valid email address.</div>
+                            </div>
+                            <div class="form-group">
+                                <label for="company">Company Name:</label>
+                                <input type="text" class="form-control" id="company" name="CompanyName" placeholder="Company Name" required>
+                                <div class="invalid-feedback">Company Name is required.</div>
+                            </div>
+                            <div class="form-group">
+                                <label for="country">Country:</label>
+                                <select asp-for="CountryId" name="CountryId" class="form-control" id="countryid" asp-items="@Model.Countries"></select>
+                                <div class="invalid-feedback">Country is required.</div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-form-label">Gender:</label>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" id="male" value="Male" name="Gender" required>
+                                    <label class="form-check-label" for="male">Male</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" id="female" name="Gender" value="Female" required>
+                                    <label class="form-check-label" for="female">Female</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" id="other" name="Gender" value="Others" required>
+                                    <label class="form-check-label" for="other">Other</label>
+                                </div>
+                                <div class="invalid-feedback">Please select a Gender.</div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="col-form-label">Select Role:</label>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" id="isAdmin" name="IsAdmin" value="true" required>
+                                    <label class="form-check-label" for="isAdmin">Admin</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" id="isUser" name="IsAdmin" value="false" required>
+                                    <label class="form-check-label" for="isUser">User</label>
+                                </div>
+                                <div class="invalid-feedback">Please select a role.</div>
+                            </div>
+
+
+                            <button type="submit" class="btn btn-primary btn-block">Register</button>
+                        </form>
+
+
+                    </div>
+                    <div class="card-footer">
+                        <small class="text-muted">Already have an account? <a href="@Url.Action("Login", "Account")">Go to Login</a>.</small>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        // Bootstrap's form validation script
+        (function () {
+            'use strict';
+
+            var forms = document.querySelectorAll('.needs-validation');
+
+            Array.prototype.slice.call(forms)
+                .forEach(function (form) {
+                    form.addEventListener('submit', function (event) {
+                        if (!form.checkValidity()) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                        }
+
+                        form.classList.add('was-validated');
+                    });
+                });
+        })();
+
+        const genderRadios = document.querySelectorAll('[name="Gender"]');
+        const roleRadios = document.querySelectorAll('[name="Role"]');
+
+        roleRadios.forEach(radio => {
+            radio.addEventListener("change", function () {
+                // Clear any potential validation errors
+                roleRadios.forEach(radio => radio.classList.remove('is-invalid'));
+            });
+        });
+        genderRadios.forEach(radio => {
+            radio.addEventListener("change", function () {
+                // Clear any potential validation errors
+                genderRadios.forEach(radio => radio.classList.remove('is-invalid'));
+            });
+        });
+    </script>
+
+</body>
+</html>

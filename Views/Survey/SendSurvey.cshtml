@@ -1,0 +1,129 @@
+﻿@{
+    Layout = ViewBag.LayoutPath;
+}
+
+
+<style>
+    body {
+        background-color: #f8f9fa;
+    }
+
+    .login-container {
+        margin-top: 100px;
+    }
+
+    .was-validated .form-control:invalid {
+        border-color: #dc3545;
+    }
+
+        .was-validated .form-control:invalid:focus {
+            border-color: #dc3545;
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, .25);
+        }
+
+    .ml-65 {
+        margin-left: 65%
+    }
+</style>
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <div class="row">
+                    <div class="col">
+                        Send Survey
+                    </div>
+                    <div class="col">
+                        <input type="text" class="form-control" id="survey-tag" placeholder="Enter Survey Tag to use as a filter">
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                @if (!ViewContext.ModelState.IsValid)
+                {
+                    <div class="alert alert-danger" role="alert">
+                        @Html.ValidationSummary(false, "", new { @class = "text-danger" })
+                    </div>
+                }
+                <form asp-action="SendSurvey" method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+                    <input type="hidden" name="surveyTag" id="hidden-survey-tag"> <!-- Hidden input field for surveyTag -->
+                    <input type="hidden" name="uniqueId" value="@ViewBag.UniqueId" />
+                    <div class="form-group">
+                        <label for="email">Email:</label>
+                        <input type="text" class="form-control" id="email" name="Email" placeholder="Enter your Email" required>
+                        <div class="invalid-feedback">Email is required.</div>
+                        <button type="button" class="btn btn-link ml-65" id="toggleCC">CC</button>
+                        <button type="button" class="btn btn-link" id="toggleBCC">BCC</button>
+                    </div>
+                    <div class="form-group" id="ccMail" style="display: none;">
+                        <label for="cc">cc:</label>
+                        <input type="text" class="form-control" id="cc" name="cc" placeholder="Enter cc mail">
+                    </div>
+                    <div class="form-group" id="bccMail" style="display: none;">
+                        <label for="bcc">bcc:</label>
+                        <input type="text" class="form-control" id="bcc" name="bcc" placeholder="Enter Bcc mail">
+                    </div>
+                    <div class="form-group">
+                        <label for="logo">Attach Logo:</label>
+                        <input type="file" class="form-control-file" id="logo" name="logo" accept="image/*" onchange="validateLogoSize(this)">
+                        <small class="form-text text-muted">Max file size: 5MB</small>
+                    </div>
+                    <button type="submit" class="btn btn-primary" onclick="setSurveyTag()">Send Survey</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    function setSurveyTag() {
+        var surveyTagInput = document.getElementById('survey-tag');
+        var hiddenSurveyTagInput = document.getElementById('hidden-survey-tag');
+        hiddenSurveyTagInput.value = surveyTagInput.value;
+    }
+    // Function to toggle CC field
+    document.getElementById('toggleCC').addEventListener('click', function () {
+        document.getElementById('ccMail').style.display = document.getElementById('ccMail').style.display === 'none' ? 'block' : 'none';
+    });
+
+    // Function to toggle BCC field
+    document.getElementById('toggleBCC').addEventListener('click', function () {
+        document.getElementById('bccMail').style.display = document.getElementById('bccMail').style.display === 'none' ? 'block' : 'none';
+    });
+
+    // Function to validate logo size
+    function validateLogoSize(input) {
+        if (input.files && input.files[0]) {
+            var fileSize = input.files[0].size;
+            var maxSize = 5 * 1024 * 1024; // 5MB
+            if (fileSize > maxSize) {
+                alert('File size exceeds 5MB. Please choose a smaller file.');
+                input.value = ''; // Clear the file input
+            }
+        }
+    }
+
+    // Hide CC and BCC fields initially
+    document.getElementById('ccMail').style.display = 'none';
+    document.getElementById('bccMail').style.display = 'none';
+
+    // Bootstrap's form validation script
+    (function () {
+        'use strict';
+
+        // Fetch all the forms we want to apply custom Bootstrap validation styles to
+        var forms = document.querySelectorAll('.needs-validation');
+
+        // Loop over them and prevent submission
+        Array.prototype.slice.call(forms)
+            .forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+
+                    form.classList.add('was-validated');
+                }, false);
+            });
+    })();
+</script>

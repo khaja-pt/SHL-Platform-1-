@@ -1,0 +1,49 @@
+html {
+    font-size: 14px;
+}
+
+@media (min-width: 768px) {
+    html {
+        font-size: 16px;
+    }
+}
+
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+    box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+}
+
+html {
+    position: relative;
+    min-height: 100%;
+}
+
+body {
+    margin-bottom: 60px;
+}
+
+.logo {
+    height: 30px;
+    width: 30px;
+}
+
+#sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 250px; /* Adjust width as needed */
+    background-color: #343a40; /* Sidebar background color */
+    color: #fff; /* Text color */
+    padding-top: 56px; /* Height of the header */
+    z-index: 1000; /* Ensure sidebar is above other content */
+}
+
+#content {
+    margin-left: 250px; /* Adjust margin to match the sidebar width */
+    padding-top: 56px; /* Height of the header */
+    padding-bottom: 50px; /* Height of the footer */
+}
+
+.hide {
+    display: none;
+}

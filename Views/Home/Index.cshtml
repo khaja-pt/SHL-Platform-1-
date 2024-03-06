@@ -1,0 +1,33 @@
+﻿@model List<User>
+
+<h1>Registered Users List</h1>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Employee Name</th>
+            <th>Email</th>
+            <th>Company Name</th> 
+            <th>Gender</th>
+            <th>Country</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var user in Model)
+        {
+            <tr>
+                <td>@user.EmployeeName</td>
+                <td>@user.Email</td>
+                <td>@user.CompanyName</td>
+                <td>@user.Gender</td>
+                <td>@(user.Country != null ? user.Country.Name : "Unknown")</td>
+                <td>
+                    <form method="post" action="@Url.Action("DeleteUser", "Home")">
+                        <input type="hidden" name="userId" value="@user.Id" />
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

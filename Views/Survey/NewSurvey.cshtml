@@ -1,0 +1,668 @@
+﻿@{
+    Layout = ViewBag.LayoutPath;
+}
+
+<style>
+    .left-menu {
+        position: fixed;
+        left: 0;
+        width: 200px;
+        background-color: #333;
+        color: #fff;
+        padding: 20px;
+    }
+
+    #expand-menu-btn {
+        background: none;
+        border: none;
+        color: #fff;
+        font-size: 16px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+    }
+
+    .icon {
+        margin-right: 5px;
+    }
+
+    /* Style for the expanded menu */
+    .left-menu.expanded {
+        width: 300px;
+    }
+
+
+    #form-container {
+        display: flex;
+        flex-wrap: wrap;
+        border: 1px solid #ccc;
+        padding: 10px;
+    }
+
+    .form-element {
+        margin: 5px;
+        border: 1px solid #eee;
+        padding: 5px;
+    }
+
+    .editable {
+        cursor: pointer;
+    }
+
+        .editable:hover {
+            background-color: #f5f5f5;
+        }
+
+    .draggable {
+        cursor: grab;
+    }
+
+        .draggable:hover {
+            cursor: grabbing;
+        }
+
+    .rating-container {
+        font-size: 0; /* Remove whitespace between inline-block elements */
+    }
+
+    .rating-star {
+        display: inline-block;
+        width: 20px; /* Adjust the size of the star */
+        height: 20px; /* Adjust the size of the star */
+        font-size: 25px; /* Set the font size to match the star size */
+        color: #ccc; /* Color of the star */
+        cursor: pointer;
+    }
+
+        .rating-star:hover,
+        .rating-star.filled {
+            color: gold; /* Color of the filled star */
+        }
+
+    .card-header {
+        display: inline-block;
+        vertical-align: top;
+    }
+
+    .label-wrapper {
+        display: inline-block;
+        vertical-align: top;
+        margin-left: 45%; /* Adjust margin as needed */
+    }
+
+    .camera-icon {
+        display: block; /* Ensure label occupies full width */
+    }
+
+    .grab {
+        cursor: grab; /* Change cursor to grab */
+        cursor: -webkit-grab;
+    }
+
+</style>
+
+<div class="left-menu">
+    <button id="expand-menu-btn">
+        <span class="icon">+</span> Add survey elements
+    </button>
+    <div class="form-elements mt-3" style="display: none;">
+        <ul style="background-color:white; list-style:none">
+            <li style="color:black;">
+                Form Elements
+            </li>
+        </ul>
+        <div class="form-group" draggable="true" data-type="text">
+            <i class="fa-solid fa-t"></i><label class="grab ml-3">TextBox</label>
+        </div>
+        <div class="form-group" draggable="true" data-type="dropdown">
+            <i class="fa-solid fa-circle-chevron-down"></i> <label class="grab ml-3">Dropdown</label>
+        </div>
+        <div class="form-group" draggable="true" data-type="radio">
+            <i class="fa-solid fa-circle-dot"></i>   <label class="grab ml-3">Radio Button</label>
+        </div>
+        <div class="form-group" draggable="true" data-type="fill-in-blank">
+            <i class="fa-solid fa-f"></i> <label class="grab ml-3">Fill in the Blank</label>
+        </div>
+        <ul style="background-color:white; list-style:none">
+            <li style="color:black;">
+                File Elements
+            </li>
+        </ul>
+        <div class="form-group" draggable="true" data-type="rating">
+            <i class="fa-regular fa-star"></i> <label class="grab ml-3">Rating</label>
+        </div>
+        <div class="form-group" draggable="true" data-type="table">
+            <i class="fa-solid fa-table"></i>   <label class="grab ml-3">Table</label>
+        </div>
+        <div class="form-group" draggable="true" data-type="video">
+            <i class="fa-solid fa-file-arrow-up"></i> <label class="grab ml-3">File Upload</label>
+        </div>
+
+    </div>
+</div>
+
+<div class="mt-3">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header" id="survey-box">
+                    Survey Box
+                    <div class="label-wrapper">
+                        <label for="imageUpload" class="camera-icon" title="Upload Image" style="cursor:pointer;">
+                            Background Image
+                            <input type="file" id="imageUpload" accept="image/jpeg, image/png, image/jpg" style="display:none;">
+                            <i class="fas fa-camera btn btn-success"></i>
+                        </label>
+                    </div>
+                </div>
+                <div class="card-body" id="survey-elements">
+                    @if (!ViewContext.ModelState.IsValid)
+                    {
+                        <div class="alert alert-danger" role="alert">
+                            @Html.ValidationSummary(false, "", new { @class = "text-danger" })
+                        </div>
+                    }
+                    <!-- Survey elements will be dynamically added here -->
+                    <p class="instruction" style="background-color: lightgray; height: 115px; text-align: center;">
+                        <i class="fa-solid fa-arrows-up-down-left-right" style="margin-top: 3rem;"></i>
+                        <label class="ml-3"> Drag and Drop here</label>
+                    </p>
+                </div>
+                <div class="card-footer">
+                    <button type="submit" id="submitSurvey" class="btn btn-success btn-block">Submit Survey</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        var bgImgURL = "";
+        const expandMenuBtn = document.getElementById("expand-menu-btn");
+        const leftMenu = document.querySelector(".left-menu");
+        const formElements = document.querySelector(".form-elements");
+        const surveyElementsContainer = document.getElementById("survey-elements");
+
+        expandMenuBtn.addEventListener("click", function () {
+            leftMenu.classList.toggle("expanded");
+            if (leftMenu.classList.contains("expanded")) {
+                formElements.style.display = "block";
+            } else {
+                formElements.style.display = "none";
+            }
+        });
+
+        const draggables = document.querySelectorAll(".form-group[draggable='true']");
+
+        draggables.forEach(function (draggable) {
+            draggable.addEventListener("dragstart", function (event) {
+                const dataType = draggable.getAttribute("data-type");
+                event.dataTransfer.setData("text/plain", dataType);
+            });
+        });
+
+        surveyElementsContainer.addEventListener("dragover", function (event) {
+            event.preventDefault();
+        });
+
+        surveyElementsContainer.addEventListener("drop", function (event) {
+            var instruction = document.getElementsByClassName("instruction")[0];
+            instruction.style.display = "none";
+
+
+            event.preventDefault();
+            const dataType = event.dataTransfer.getData("text/plain");
+
+            const formGroup = document.createElement("div");
+            formGroup.classList.add("form-group", "draggable-item");
+
+            switch (dataType) {
+                case "text":
+                    addTextField(formGroup);
+                    break;
+                case "radio":
+                    addRadioButton(formGroup);
+                    break;
+                case "dropdown":
+                    addDropdown(formGroup);
+                    break;
+                case "fill-in-blank":
+                    addFillInBlank(formGroup);
+                    break;
+                case "rating":
+                    addRating(formGroup);
+                    break;
+                case "table":
+                    addTable(formGroup);
+                    break;
+                case "video":
+                    addVideo(formGroup);
+                    break;
+            }
+
+            surveyElementsContainer.appendChild(formGroup);
+        });
+
+
+        function addTextField(formGroup) {
+            const label = createEditableLabel("Text:");
+            const input = document.createElement("input");
+            input.setAttribute("type", "text");
+            input.classList.add("form-control");
+            formGroup.appendChild(label);
+            formGroup.appendChild(input);
+        }
+
+        function addRadioButton(formGroup) {
+            const label = createEditableLabel("Radio:");
+
+            const radio1 = createRadioButton("Option 1", "option1");
+            const radio2 = createRadioButton("Option 2", "option2");
+
+            formGroup.appendChild(label);
+            formGroup.appendChild(radio1);
+            formGroup.appendChild(radio2);
+        }
+
+        function addDropdown(formGroup) {
+            const label = createEditableLabel("Dropdown:");
+
+            const optionInput = document.createElement("input");
+            optionInput.setAttribute("type", "text");
+            optionInput.classList.add("form-control", "dropdown-option", "mt-1", "col-9");
+            optionInput.placeholder = "Enter Option";
+            optionInput.style.display = "block";
+
+            const addOptionBtn = document.createElement("button");
+            addOptionBtn.textContent = "Add Option";
+            addOptionBtn.classList.add("btn", "btn-primary", "add-option-btn", "mt-1");
+            addOptionBtn.style.marginLeft = "10px";
+
+            const optionWrapper = document.createElement("div");
+            optionWrapper.style.display = "flex";
+            optionWrapper.appendChild(optionInput);
+            optionWrapper.appendChild(addOptionBtn);
+
+            const select = document.createElement("select");
+            select.classList.add("form-control", "dropdown-select");
+
+            formGroup.appendChild(label);
+            formGroup.appendChild(select);
+            formGroup.appendChild(optionWrapper);
+
+            addOptionBtn.addEventListener("click", function () {
+                const optionValue = optionInput.value.trim();
+                if (optionValue !== "") {
+                    const option = document.createElement("option");
+                    option.textContent = optionValue;
+                    select.appendChild(option);
+                    optionInput.value = ""; // Clear the text input
+                }
+            });
+        }
+
+        function addFillInBlank(formGroup) {
+            const label = createEditableLabel("Fill in the blank:");
+            const spanPlaceholder = document.createElement("span");
+            spanPlaceholder.classList.add("form-blank");
+            spanPlaceholder.contentEditable = true;
+            spanPlaceholder.textContent = "__________"; // Adjust number of underscores as needed
+            label.appendChild(spanPlaceholder);
+            formGroup.appendChild(label);
+        }
+
+        // Function to add rating element
+        function addRating(formGroup) {
+            const label = createEditableLabel("Rating:");
+            const ratingContainer = document.createElement("div");
+            ratingContainer.classList.add("rating-container");
+
+            // Add star icons for rating
+            for (let i = 1; i <= 5; i++) {
+                const starIcon = document.createElement("span");
+                starIcon.classList.add("rating-star");
+                starIcon.textContent = "★"; // Unicode character for a star
+                starIcon.dataset.rating = i;
+                ratingContainer.appendChild(starIcon);
+
+                // Add click event listener to star icons
+                starIcon.addEventListener("click", function () {
+                    const rating = parseInt(starIcon.dataset.rating);
+
+                    // Toggle filled class for the clicked star and all stars before it
+                    const stars = ratingContainer.querySelectorAll(".rating-star");
+                    stars.forEach((star, index) => {
+                        if (index < rating) {
+                            star.classList.add("filled");
+                        } else {
+                            star.classList.remove("filled");
+                        }
+                    });
+                });
+            }
+
+            formGroup.appendChild(label);
+            formGroup.appendChild(ratingContainer);
+        }
+
+        function addTable(formGroup) {
+            const label = createEditableLabel("Table:");
+            const table = document.createElement("table");
+            table.classList.add("editable-table");
+            table.style.borderCollapse = "collapse"; // Add border collapse for cell borders to appear continuous
+            table.style.width = "100%"; // Set table width to 100% of its container
+
+            // Add table header with initial column
+            const thead = document.createElement("thead");
+            const headerRow = document.createElement("tr");
+            const headerCell = document.createElement("th");
+            headerCell.contentEditable = true; // Allow editing table header
+            headerCell.textContent = ""; // Empty initial column header text
+            headerCell.style.border = "1px solid black"; // Add border to the first column header
+            headerCell.style.width = "100px"; // Set initial width for the column
+            headerRow.appendChild(headerCell);
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+
+            // Add table body
+            const tbody = document.createElement("tbody");
+            const bodyRow = document.createElement("tr");
+            const bodyCell = document.createElement("td");
+            bodyCell.contentEditable = true; // Allow editing table cells
+            bodyCell.textContent = ""; // Empty initial cell text
+            bodyCell.style.border = "1px solid black"; // Add border to the first cell
+            bodyCell.style.width = "100px"; // Set initial width for the cell
+            bodyRow.appendChild(bodyCell);
+            tbody.appendChild(bodyRow);
+            table.appendChild(tbody);
+
+            // Function to add a new column to the table
+            function addColumn() {
+                const numColumns = table.querySelectorAll("tr:first-child th").length;
+                const newHeaderCell = document.createElement("th");
+                newHeaderCell.contentEditable = true;
+                newHeaderCell.textContent = ""; // Empty text for new column header
+                newHeaderCell.style.border = "1px solid black"; // Add border to the new column header
+                newHeaderCell.style.width = "100px"; // Set initial width for the new column
+                table.querySelector("tr:first-child").appendChild(newHeaderCell);
+
+                const rows = table.querySelectorAll("tr");
+                rows.forEach((row, index) => {
+                    if (index !== 0) {
+                        const newCell = document.createElement("td");
+                        newCell.contentEditable = true;
+                        newCell.textContent = ""; // Empty text for new cell
+                        newCell.style.border = "1px solid black"; // Add border to the new cell
+                        newCell.style.width = "100px"; // Set initial width for the new cell
+                        row.appendChild(newCell);
+                    }
+                });
+            }
+
+            // Function to add a new row to the table
+            function addRow() {
+                const numColumns = table.querySelectorAll("tr:first-child th").length;
+                const newRow = document.createElement("tr");
+                for (let i = 0; i < numColumns; i++) {
+                    const newCell = document.createElement("td");
+                    newCell.contentEditable = true;
+                    newCell.textContent = ""; // Empty text for new cell
+                    newCell.style.border = "1px solid black"; // Add border to the new cell
+                    newCell.style.width = "100px"; // Set initial width for the new cell
+                    newRow.appendChild(newCell);
+                }
+                table.querySelector("tbody").appendChild(newRow);
+            }
+
+            // Function to remove a column from the table
+            function removeColumn() {
+                const numColumns = table.querySelectorAll("tr:first-child th").length;
+                if (numColumns > 1) {
+                    table.querySelectorAll("tr").forEach(row => {
+                        row.removeChild(row.lastElementChild);
+                    });
+                }
+            }
+
+            // Function to remove a row from the table
+            function removeRow() {
+                const numRows = table.querySelectorAll("tr").length;
+                if (numRows > 1) {
+                    table.querySelector("tbody").removeChild(table.querySelector("tbody").lastElementChild);
+                }
+            }
+
+            // Button to add a new column
+            const addColumnButton = document.createElement("button");
+            addColumnButton.textContent = "Add Column";
+            addColumnButton.classList.add("btn");
+            addColumnButton.classList.add("btn-primary");
+            addColumnButton.classList.add("mt-3");
+            addColumnButton.addEventListener("click", addColumn);
+
+            // Button to add a new row
+            const addRowButton = document.createElement("button");
+            addRowButton.textContent = "Add Row";
+            addRowButton.classList.add("btn");
+            addRowButton.classList.add("btn-primary");
+            addRowButton.classList.add("mt-3");
+            addRowButton.classList.add("ml-1");
+            addRowButton.addEventListener("click", addRow);
+
+            // Button to remove a column
+            const removeColumnButton = document.createElement("button");
+            removeColumnButton.textContent = "Remove Column";
+            removeColumnButton.classList.add("btn");
+            removeColumnButton.classList.add("btn-danger");
+            removeColumnButton.classList.add("mt-3");
+            removeColumnButton.classList.add("ml-1");
+            removeColumnButton.addEventListener("click", removeColumn);
+
+            // Button to remove a row
+            const removeRowButton = document.createElement("button");
+            removeRowButton.textContent = "Remove Row";
+            removeRowButton.classList.add("btn");
+            removeRowButton.classList.add("btn-danger");
+            removeRowButton.classList.add("mt-3");
+            removeRowButton.classList.add("ml-1");
+            removeRowButton.addEventListener("click", removeRow);
+
+            // Add buttons to form group
+            formGroup.appendChild(label);
+            formGroup.appendChild(table);
+            formGroup.appendChild(addColumnButton);
+            formGroup.appendChild(addRowButton);
+            formGroup.appendChild(removeColumnButton);
+            formGroup.appendChild(removeRowButton);
+        }
+
+        function addVideo(formGroup) {
+            const label = createEditableLabel("File Upload:");
+            const input = document.createElement("input");
+            input.setAttribute("type", "file");
+            input.classList.add("form-control-file");
+            formGroup.appendChild(label);
+            formGroup.appendChild(input);
+        }
+
+
+
+        function createEditableLabel(labelText) {
+            const label = document.createElement("label");
+            label.contentEditable = true;
+            label.textContent = labelText;
+            return label;
+        }
+
+        function createRadioButton(labelText, value) {
+            const radio = document.createElement("input");
+            radio.setAttribute("type", "radio");
+            radio.setAttribute("name", "radio");
+            radio.setAttribute("value", value); // Set the value attribute dynamically
+            radio.classList.add("form-check-input");
+            const label = createEditableLabel(labelText);
+            const radioContainer = document.createElement("div");
+            radioContainer.classList.add("form-check");
+            radioContainer.appendChild(radio);
+            radioContainer.appendChild(label);
+            return radioContainer;
+        }
+
+        //Background image uploading
+        document.getElementById('imageUpload').addEventListener('change', function (event) {
+            var file = event.target.files[0];
+
+            var formData = new FormData(); // Create FormData object to send files
+
+            formData.append('image', file); // Append the file to the FormData object with key 'image'
+
+            // Send the image data to the server using fetch and FormData
+            fetch('/Survey/BgImage', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to upload image.');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Once the image is successfully uploaded, set it as the background image
+                    // document.getElementById('survey-box-container').style.backgroundImage = 'url(' + e.target.result + ')';
+                    // document.getElementById('survey-box-container').style.backgroundRepeat = 'no-repeat';
+                    bgImgURL = data.imageUrl;
+                    var reader = new FileReader();
+                    reader.onload = function (e) {
+                        document.getElementById('survey-box-container').style.backgroundImage = 'url(' + e.target.result + ')';
+                        document.getElementById('survey-box-container').style.backgroundRepeat = 'no-repeat';
+                    };
+                    reader.readAsDataURL(file);
+                })
+                .catch(error => {
+                    console.error('Error:', error.message);
+                });
+        });
+
+        document.getElementById("submitSurvey").addEventListener("click", function () {
+            // Example of extracting form data from dynamic form elements
+            const formData = {};
+
+            // Select all draggable items inside the survey container
+            const draggableItems = document.querySelectorAll("#survey-elements .draggable-item");
+
+            draggableItems.forEach(function (item, index) {
+                const label = item.querySelector("label"); // Select the label element within the draggable item
+                let labelText = label.textContent.trim(); // Extract the label text and trim any leading/trailing spaces
+
+                // If the label text is empty, get the content from the label element itself
+                if (labelText === "") {
+                    labelText = label.innerHTML.trim();
+                }
+
+                // Check if the item contains a select element
+                const select = item.querySelector("select");
+                if (select) {
+                    const options = Array.from(select.options).map(option => option.text);
+                    formData[`dropdown_${index}`] = { label: labelText, selectedValue: select.value, options: options };
+                    return; // Move to the next draggable item
+                }
+
+                // Check if the item contains radio buttons
+                const radioButtons = item.querySelectorAll("input[type='radio']");
+                if (radioButtons.length > 0) {
+                    const options = {};
+                    const groupName = radioButtons[0].getAttribute('name'); // Extract the name attribute from the first radio button
+
+                    radioButtons.forEach(function (radio) {
+                        const optionValue = radio.value
+                        const optionLabel = radio.nextElementSibling.textContent.trim();
+                        options[optionValue] = optionLabel;
+                    });
+
+                    formData[`radio_${index}`] = { label: labelText, options: options };
+                    return; // Move to the next draggable item
+                }
+
+                // Check if the item contains an input element
+                const input = item.querySelector("input[type='text']");
+                if (input) {
+                    formData[`textbox_${index}`] = { label: labelText, value: input.value };
+                    return; // Move to the next draggable item
+                }
+
+                const ratingContainer = item.querySelector(".rating-container");
+                if (ratingContainer) {
+                    const stars = ratingContainer.querySelectorAll(".rating-star");
+                    let ratingValue = 0;
+                    stars.forEach((star, i) => {
+                        if (star.classList.contains("filled")) {
+                            ratingValue = i + 1;
+                        }
+                    });
+                    formData[`rating_${index}`] = { label: labelText, value: ratingValue };
+                    return;
+                }
+
+                const table = item.querySelector("table");
+                if (table) {
+                    const tableData = [];
+                    for (let i = 0; i < table.rows.length; i++) {
+                        const rowData = [];
+                        for (let j = 0; j < table.rows[i].cells.length; j++) {
+                            rowData.push(table.rows[i].cells[j].textContent.trim());
+                        }
+                        tableData.push(rowData);
+                    }
+                    formData[`table_${index}`] = { label: labelText, data: tableData };
+                    return;
+                }
+                const fileInput = item.querySelector("input[type='file']");
+                if (fileInput) {
+                    formData[`file_${index}`] = { label: labelText, fileName: fileInput.value.split('\\').pop() };
+                    return;
+                }
+                // Check if the item contains a fill-in-the-blank element
+                const fillBlank = item.querySelector(".form-blank");
+                if (fillBlank) {
+                    formData[`fillblank_${index}`] = { label: labelText, content: fillBlank.textContent.trim() };
+                    return; // Move to the next draggable item
+                }
+            });
+            if (bgImgURL != "") {
+                formData['bgImage'] = bgImgURL;
+            }
+            var stringifyData = JSON.stringify(formData);
+            // Use fetch or any other method to send the formData object to the server
+            fetch('/Survey/NewSurvey', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(stringifyData)
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to submit form.');
+                    }
+                    return response.json(); // Parse the JSON response
+                })
+                .then(data => {
+                    if (data.success) {
+                        // Redirect to the specified URL
+                        window.location.href = data.redirectUrl;
+
+                    } else {
+                        console.error('Form submission failed.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error.message);
+                });
+        });
+
+    });
+
+</script>

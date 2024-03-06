@@ -1,0 +1,157 @@
+﻿@model SHL_Platform.Models.Survey
+
+@{
+    Layout = ViewBag.LayoutPath;
+}
+<style>
+    img {
+        height: 30px;
+        width: 30px;
+    }
+
+    .rating-container {
+        font-size: 0; /* Remove whitespace between inline-block elements */
+    }
+
+    .rating-star {
+        display: inline-block;
+        width: 20px; /* Adjust the size of the star */
+        height: 20px; /* Adjust the size of the star */
+        font-size: 25px; /* Set the font size to match the star size */
+        color: #ccc; /* Color of the star */
+        cursor: pointer;
+    }
+
+        .rating-star.filled {
+            color: gold; /* Color of the filled star */
+        }
+        th{
+            height:20px;
+        }
+        td{
+            height:20px;
+        }
+</style>
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">  <img src="~/images/Logo.jpeg" alt="SHL Platform" />Submitted Survey</div>
+            <div class="card-body" id="form-container">
+            </div>
+            <div class="card-footer">
+                <button type="submit" onclick="goBack()" class="btn btn-success ">Back</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var Token = '@ViewBag.Token';
+
+    if ('@Model.UpdatedSurvey' !== 'null') {
+        var jsonDataString = '@Html.Raw(Model.UpdatedSurvey)';
+        // Parse the JSON string into a JSON object
+        var jsonData = JSON.parse(jsonDataString);
+        var htmlForm = jsonToHtml(jsonData);
+        // Function to convert JSON data to HTML form
+        function jsonToHtml(jsonData) {
+            var html = '<form id="surveyForm">';
+            for (var key in jsonData) {
+                if (jsonData.hasOwnProperty(key)) {
+                    var item = jsonData[key];
+
+                    if (key.startsWith('textbox')) {
+                        html += '<div class="form-group">'
+                        html += `<label>${item.label}</label>`;
+                        html += `<input type="text" class="form-control"  name="${key}" value="${item.value}" disabled>`;
+                        html += '</div>'
+
+                    } else if (key.startsWith('dropdown')) {
+                        html += '<div class="form-group">'
+
+                        html += `<label>${item.label}</label>`;
+                        html += `<select name="${key}"class="form-control" disabled>`;
+                        item.options.forEach(option => {
+                            html += `<option value="${option}" ${item.selectedValue === option ? 'selected' : ''}>${option}</option>`;
+                        });
+                        html += `</select>`;
+                        html += '</div>'
+
+                    }
+                    else if (key.startsWith('radio')) {
+                        html += '<div class="form-group">'
+                        html += `<label>${item.label}</label>`;
+                        for (var optionKey in item.options) {
+                            html += '<div class="form-check">'
+                            html += `<input type = "radio" name = "${key}" value = "${optionKey}" disabled id = "${optionKey}" ${item.value === optionKey ? 'checked' : ''} class="form-check-input">`;
+                            html += `<label for= "${optionKey}" > ${item.options[optionKey]} </label>`;
+                            html += '</div>'
+                        }
+                        html += '</div>'
+                    }
+                    else if (key.startsWith('rating')) {
+                        html += '<div class="form-group">'
+                        html += `<label>${item.label}</label>`;
+                        html += '<div class="rating-container">';
+                        for (let i = 1; i <= 5; i++) {
+                            html += `<span class="rating-star ${i <= item.value ? 'filled' : ''}" style="cursor:default;" data-rating="${i}">★</span>`;
+                        }
+                        html += '</div>';
+                        html += '</div>';
+                    }
+
+                    else if (key.startsWith('table')) {
+                        html += '<div class="form-group">';
+                        html += `<label>${item.label}</label>`;
+                        html += '<table style="border-collapse: collapse; width: 100%;">';
+                        html += '<thead style="font-weight: bold;">';
+                        html += '<tr>';
+                        for (let i = 0; i < item.data[0].length; i++) {
+                            html += `<th style="border: 1px solid black;">${item.data[0][i]}</th>`;
+                        }
+                        html += '</tr>';
+                        html += '</thead>';
+                        html += '<tbody>';
+                        for (let i = 1; i < item.data.length; i++) {
+                            html += '<tr>';
+                            for (let j = 0; j < item.data[i].length; j++) {
+                                html += `<td style="border: 1px solid black;">${item.data[i][j]}</td>`;
+                            }
+                            html += '</tr>';
+                        }
+                        html += '</tbody>';
+                        html += '</table>';
+                        html += '</div>';
+                    }
+
+                    else if (key.startsWith('file')) {
+                        html += '<div class="form-group">';
+                        html += `<label>${item.label}</label>`;
+                        if (item.fileName) {
+                            const filePath = `/Home/DownloadFile?fileName=${item.fileName}&key=${key}&token=${Token}`;
+                            html += `<p>Uploaded File: <a href="${filePath}" download="${item.fileName}">${item.fileName}</a></p>`;
+                        }
+                        html += '</div>';
+                    }
+
+                }
+            }
+            html += '</form>';
+            return html;
+        }
+        // Append the HTML form to a container
+        document.getElementById('form-container').innerHTML = htmlForm;
+
+        // Apply background image to the form container
+        var formContainer = document.getElementById('survey-box-container');
+        formContainer.style.backgroundImage = `url('${jsonData.bgImage}')`;
+        formContainer.style.backgroundRepeat = `no-repeat`;
+    }
+    else {
+        alert("Error in binding ! Try again in few minutes ")
+    }
+
+    function goBack() {
+        window.location.href = "@Url.Action("UserPage", "Home")"
+    }
+</script>
